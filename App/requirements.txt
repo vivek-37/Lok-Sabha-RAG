@@ -1,8 +1,10 @@
-streamlit
-python-dotenv
 torch
 sentence-transformers
+transformers
+protobuf==3.20.3
 fastembed
 qdrant-client
+streamlit
+python-dotenv
 google-genai
 openai
