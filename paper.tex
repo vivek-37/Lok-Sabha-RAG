@@ -20,7 +20,7 @@
 \usepackage{listings}
 \usepackage{array}
 \usepackage{balance}
-
+\usepackage{titlesec}
 % ─── Listings style ──────────────────────────────────────────────────────────
 \lstset{
   basicstyle=\ttfamily\scriptsize,
@@ -30,7 +30,7 @@
   numberstyle=\tiny,
   keywordstyle=\color{blue},
   commentstyle=\color{gray},
-  stringstyle=\color{red!60!black},
+  stringstyle=\color{red!60!black}, 
 }
 
 % ─── Hyperref config ─────────────────────────────────────────────────────────
@@ -45,46 +45,38 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 % ─────────────────────────────────────────────────────────────────────────────
+
 \begin{document}
 
 \title{Engineering a Hallucination-Resistant, Multilingual RAG Architecture
-       for Indian Parliamentary Data under Hardware Constraints}
+       for Indian Parliamentary Data}
 
 \author{%
-  \IEEEauthorblockN{Vrishant Bhalla}
+  \IEEEauthorblockN{Vivek Rekha Ashoka}
   \IEEEauthorblockA{%
     \textit{Department of Computer Science \& Engineering}\\
-    \textit{[Institution Name]}\\
-    \textit{[City, Country]}\\
-    vrishant.bhalla@[institution].edu}
+    \textit{PES University}\\
+    \textit{Bangalore, India}\\
+    pes1ug23cs704@pesu.pes.edu}
+\and
+  \IEEEauthorblockN{Vrishant Bhalla}
+  \IEEEauthorblockA{%
+     \textit{Department of Computer Science \& Engineering}\\
+    \textit{PES University}\\
+    \textit{Bangalore, India}\\
+    pes1ug23cs706@pesu.pes.edu}
 }
 
 \maketitle
 
 % ─────────────────────────────────────────────────────────────────────────────
 \begin{abstract}
-Retrieving factually precise legal information from the voluminous,
-multilingual Lok Sabha parliamentary corpus presents a fundamental challenge
-to modern information retrieval (IR) systems.
-Single-stage Retrieval-Augmented Generation (RAG) pipelines applied naively
-to this domain suffer from four compounding failure modes: (i)~Large Language
-Model (LLM) hallucinations that fabricate statutory citations, (ii)~numerical
-precision loss arising from the inability of sparse keyword models to
-generalise across synonymous legal phrasings, (iii)~score incommensurability
-when fusing unbounded BM25 sparse scores with bounded dense cosine
-similarities, and (iv)~Out-of-Memory (OOM) crashes during bulk ingestion of
-241,000-document corpora on consumer-grade hardware.
-We present a hardware-optimised, \emph{Two-Stage Hybrid Retrieval System}
-that addresses each failure mode through a principled engineering pipeline:
-a structure-aware bilingual chunker with parent-context injection, a fused
-Reciprocal Rank Fusion (RRF) stage combining BAAI/bge-m3 dense vectors with
-BM25 sparse arrays, a BAAI/bge-reranker-base cross-encoder reranking stage,
-and a strictly constrained Gemini-2.5-Flash generation layer operating under
-a source-citation-only prompt protocol.
-Rigorous architectural configuration of Qdrant's on-disk storage and a fixed
-CPU thread budget enables stable ingestion within a 16\,GB RAM envelope.
-The system is evaluated on statutory fact queries drawn from the Lok Sabha
-Q\&A corpus spanning the 16th--18th Lok Sabhas.
+When implementing a RAG pipeline in a legal/institutional domain where it is very important to be factually accurate, some common failures that can occur are:
+(i)~Large Language Model (LLM) hallucinations that generate fictitious statutory citations;
+(ii)~the loss of precision in numbers resulting from sparse keyword models failing to generalise synonyms of legal phrasing; and
+(iii)~degraded retrieval and reranking quality when the corpus contains documents in multiple languages and scripts, causing tokenisation-induced truncation in cross-encoders optimised for a single language.
+We evaluate the effectiveness of our system using statutory fact queries from the Lok Sabha Q\&A data source for the 16th to 18th Lok Sabha.
+We have developed a two-stage hybrid retrieval system, under hardware constraints, that aims to rectify each of these failure modes using a principled engineering pipeline that includes: a multilingual semantic chunking strategy designed with regard to the structure of the statutory data; fusing of \textit{BAAI/bge-m3} dense vectors and BM25 sparse arrays, stored and indexed on Qdrant, with the use of Reciprocal Rank Fusion (RRF) for initial retrieval followed by the use of a \textit{BAAI/bge-reranker-base} cross-encoder to implement re-ranking of the retrieved document collections; and the use of strictly constrained Cloud LLMs to generate the desired output by using retrieved documents, which provides a desired output according to its prompt guidelines.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -104,7 +96,7 @@ extraordinary volume of legislative artefacts spanning several decades:
 plenary debate transcripts, Starred and Unstarred question-answer sessions,
 Bills, Acts, committee reports, budget speeches, and ministerial statements.
 These documents are heterogeneous in structure, language, and numerical
-density; collectively they constitute a corpus of over 241,000 semantically
+density; collectively they constitute a corpus of $\approx$ 200,000 semantically
 chunked text fragments once pre-processed for machine ingestion.
 
 The emergence of powerful LLMs has generated significant interest in deploying
@@ -136,19 +128,21 @@ System} for the Lok Sabha parliamentary corpus.
 Concretely, the contributions are:
 
 \begin{enumerate}[leftmargin=*, label=(\roman*)]
-  \item A bilingual structural regex chunker with a 400-word ceiling and
+  \item An end-to-end data pipeline for constructing a structured,
+    machine-readable parliamentary corpus from scratch---including PDF
+    scraping, text extraction, boilerplate removal, failure cataloguing,
+    and structural chunking---over the 16th--18th Lok Sabha archives.
+  \item A structural regex chunker with a 400-word ceiling and
     parent-context propagation, addressing the ``Blind Split'' problem for
     both Q\&A and Debate/Bill document types.
-  \item A language-tagged ingestion pipeline using \texttt{langdetect} to
-    annotate chunks by script and language, enabling downstream multilingual
-    analysis without runtime overhead.
-  \item A mathematically principled Reciprocal Rank Fusion (RRF) layer that
-    eliminates score-magnitude distortion when combining BM25 sparse arrays
-    with dense cosine similarity vectors.
-  \item An architectural configuration recipe for deploying a 241,000-document
-    Qdrant vector database on consumer hardware while avoiding OOM crashes.
-  \item A source-constrained generation layer (Gemini-2.5-Flash) that enforces
-    citation-only responses and explicit admission of missing information.
+  \item A multilingual ingestion and retrieval strategy that combines a
+    language-aware embedding encoder (BAAI/bge-m3, trained on 100+ languages)
+    with a multilingual cross-encoder reranker (BAAI/bge-reranker-v2-m3),
+    mitigating tokenisation-induced truncation on Devanagari-script documents.
+  \item An architectural configuration recipe for deploying a
+    $\approx$200,000-document Qdrant vector database on consumer hardware
+    (16\,GB RAM) while avoiding OOM crashes, using on-disk vector and HNSW
+    storage.
 \end{enumerate}
 
 % =============================================================================
@@ -159,17 +153,13 @@ Concretely, the contributions are:
 
 \subsubsection{Dense Embeddings vs.\ Sparse Keyword Arrays}
 
-\emph{Dense embeddings} encode text as continuous, high-dimensional vectors
-$\mathbf{v} \in \mathbb{R}^d$ produced by transformer-based bi-encoders.
-Semantic similarity is computed as cosine proximity, enabling retrieval of
-paraphrased or semantically related passages even when surface-level vocabulary
-differs~\cite{lewis2020rag}.
-The model deployed in this work, BAAI/bge-m3, produces $d=1024$ vectors
-trained jointly on over 100 languages~\cite{mrag_settings2024}.
+\emph{Dense embeddings} encode text as continuous vectors
+$\mathbf{v} \in \mathbb{R}^d$ via transformer bi-encoders; cosine similarity
+enables semantic retrieval even when surface vocabulary differs~\cite{lewis2020rag}.
+This work uses BAAI/bge-m3 ($d=1024$, 100+ languages)~\cite{mrag_settings2024}.
 
-\emph{Sparse keyword arrays} (BM25) represent text as weighted inverted-index
-vectors in the full vocabulary space, with most dimensions equal to zero.
-The BM25 relevance score for query $Q$ and document $D$ is:
+\emph{Sparse keyword arrays} (BM25) weight terms via inverted-index vectors.
+The relevance score is:
 
 \begin{equation}
   \text{BM25}(D,Q) = \sum_{i=1}^{n} \text{IDF}(q_i) \cdot
@@ -177,14 +167,12 @@ The BM25 relevance score for query $Q$ and document $D$ is:
   \label{eq:bm25}
 \end{equation}
 
-\noindent where $f(q_i, D)$ is the term frequency of query term $q_i$ in $D$,
-$|D|$ the document length, $\overline{dl}$ the average document length,
-$k_1=1.2$--$2.0$ the term-saturation constant, and $b=0.75$ the
-length-normalisation factor~\cite{rag_framework2025}.
-BM25's core strength---exact-match recall---is critical for statutory section
-numbers, monetary fines, and Bill identifiers, but its scores are unbounded
-and corpus-dependent, making direct numeric fusion with bounded cosine
-similarities algebraically problematic.
+\noindent where $f(q_i, D)$ is term frequency, $|D|$ document length,
+$\overline{dl}$ average document length, $k_1{\approx}1.2$--$2.0$, and
+$b=0.75$~\cite{rag_framework2025}.
+BM25 excels at exact-match recall for statutory section numbers and Bill
+identifiers, but its unbounded, corpus-dependent scores make direct fusion
+with bounded cosine similarities problematic.
 
 \subsubsection{Evolution from Naive to Advanced RAG}
 
@@ -203,8 +191,7 @@ candidate set size from Stage~1.
 \subsubsection{Lok Sabha Data Structure}
 
 The corpus processed in this work spans the 16th, 17th, and 18th Lok Sabhas
-and comprises Starred Questions, Unstarred Questions, Bills, Debates, and
-Committee Reports in PDF format.
+and comprises Starred Questions, Unstarred Questions, Bills, and Debates in PDF format.
 Documents exhibit extreme structural heterogeneity: short single-paragraph
 Q\&A pairs of fewer than 100 words co-exist with multi-chapter Acts spanning
 hundreds of pages.
@@ -242,11 +229,11 @@ Chirkova and Nikoulina~\cite{mrag_settings2024} establish the first
 comprehensive baseline for multilingual RAG (mRAG) across 13 languages
 using the BERGEN benchmarking library.
 Their key findings directly inform this work:
-(1)~Off-the-shelf multilingual retrievers including BAAI/bge-m3 perform
-reasonably well in cross-lingual settings; (2)~achieving high performance
+(i)~Off-the-shelf multilingual retrievers including BAAI/bge-m3 perform
+reasonably well in cross-lingual settings; (ii)~achieving high performance
 across non-English queries requires a strong multilingually pre-trained LLM
 coupled with advanced prompting strategies specifying the desired output
-language; and (3)~code-switching in non-Latin-alphabet languages (including
+language; and (iii)~code-switching in non-Latin-alphabet languages (including
 Devanagari) remains a principal failure mode of current multilingual generation
 systems.
 Their work notes that ``for each question in the evaluation data, we retrieve
@@ -265,33 +252,14 @@ pre-ingestion language tagging and the selection of a retrieval encoder
 (bge-m3) that natively handles multilingual similarity in a single embedding
 space.
 
-\subsection{Research Questions}
-
-Three open research questions motivate the present architecture:
-
-\begin{description}[leftmargin=0pt]
-  \item[\textbf{RQ1}:] How can unbounded sparse (BM25) and bounded dense
-    cosine scores be mathematically fused without distortion from BM25
-    outlier documents?
-
-  \item[\textbf{RQ2}:] How can the multilingual tokenisation blindspot in
-    English-optimised 512-token cross-encoders be mitigated on a
-    consumer-hardware deployment that cannot run computationally heavy
-    $O(N^2)$ multilingual rerankers?
-
-  \item[\textbf{RQ3}:] What hardware-level configuration strategies enable
-    stable ingestion and querying of a 241,000-document vector database
-    within a 16\,GB RAM ceiling?
-\end{description}
-
 % =============================================================================
 \section{System Architecture, Methodology, and Implementation}
 \label{sec:arch}
 
 \subsection{Scope and Operational Constraints}
 
-The system operates over a \emph{static} pre-chunked dataset of
-\textbf{241,000 JSON objects} covering the Q\&A sessions and Debate/Bill
+The system operates over a \emph{static} pre-chunked dataset of $\approx$
+\textbf{200,000 JSON objects} covering the Q\&A sessions and Debate/Bill
 documents of the 16th, 17th, and 18th Lok Sabhas.
 No live web scraping or real-time parliamentary feed integration is
 implemented.
@@ -311,7 +279,7 @@ online at query time.
 The complete system consists of four offline pipeline stages and two online
 query-time stages:
 
-\begin{enumerate}[leftmargin=*, label=\textbf{Stage \arabic*.}]
+\begin{enumerate}[leftmargin=*, label=\textbf{Stage \Roman*.}]
   \item \textbf{(Offline) Document Extraction \& Language Tagging}:
     PDF extraction via PyMuPDF; boilerplate removal; \texttt{langdetect}
     language annotation per document.
@@ -323,12 +291,19 @@ query-time stages:
     sub-chunk collision resolution.
   \item \textbf{(Offline) Vector Ingestion}:
     SQLite text vault population and Qdrant dual-vector upload.
-  \item \textbf{(Online) Stage 1 -- Hybrid RRF Retrieval}:
+  \item \textbf{(Offline) Stage V -- Hybrid RRF Retrieval}:
     Dual-path prefetch (dense + sparse) fused via RRF; top-50 candidates.
-  \item \textbf{(Online) Stage 2 -- Cross-Encoder Reranking \& Generation}:
+  \item \textbf{(Online) Stage VI -- Cross-Encoder Reranking \& Generation}:
     Reranker-scored top-$k$ reduction; Gemini-2.5-Flash constrained
     generation.
 \end{enumerate}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{image.png}
+    \caption{End-to-end layered architecture of the Two-Stage Hybrid RAG pipeline.}
+    \label{fig:architecture}
+\end{figure}
 
 \subsection{Experimental Setup and Hyperparameter Configuration}
 
@@ -336,25 +311,24 @@ query-time stages:
   \caption{Core Hyperparameters of the Two-Stage Hybrid RAG System}
   \label{tab:hyperparams}
   \centering
-  \begin{tabular}{lll}
+  \footnotesize
+  \begin{tabular}{@{}p{2.2cm}p{2.4cm}p{2.4cm}@{}}
     \toprule
     \textbf{Parameter} & \textbf{Value} & \textbf{Rationale} \\
     \midrule
-    Chunk word limit         & 400 words      & 512-token model budget \\
-    Dense encoder            & BAAI/bge-m3    & 100+ lang.; 1024D \\
-    Sparse encoder           & Qdrant/bm25    & Exact keyword match \\
-    Reranker (v1)            & bge-reranker-base & Fast; English CE \\
-    Reranker (v2)            & bge-reranker-v2-m3 & Multilingual CE \\
-    Stage-1 prefetch $K$     & 50 docs        & Both retrieval paths \\
-    Stage-2 final $k$ (v1)   & 10 docs        & LLM context budget \\
-    Stage-2 final $k$        & See \S\ref{sec:generation} & Configurable \\
-    RRF rank constant        & Default (Qdrant) & Server-side fusion \\
-    Vector dimensions        & 1024           & bge-m3 output \\
-    Qdrant storage           & on-disk SSD    & OOM prevention \\
-    CPU thread limit         & 4 threads      & Context-switch guard \\
-    SQLite batch fetch       & Bulk IN query  & N+1 elimination \\
-    LLM backbone             & gemini-2.5-flash & Low latency \\
-    CE batch size            & 4 pairs        & CPU memory budget \\
+    Chunk word limit   & 400 words       & 512-token budget \\
+    Dense encoder      & BAAI/bge-m3     & 100+ lang.; 1024D \\
+    Sparse encoder     & Qdrant/bm25     & Exact keyword match \\
+    Reranker (v1)      & bge-reranker-base & Fast; English CE \\
+    Reranker (v2)      & bge-reranker-v2-m3 & Multilingual CE \\
+    Prefetch $K$       & 50 docs         & Both retrieval paths \\
+    Final $k$          & 10 docs         & LLM context budget \\
+    RRF constant       & Default (Qdrant)& Server-side fusion \\
+    Vector dim.        & 1024            & bge-m3 output \\
+    Qdrant storage     & On-disk SSD     & OOM prevention \\
+    CPU threads        & 4               & Context-switch guard \\
+    LLM backbone       & Gemini Flash    & Low latency \\
+    CE batch size      & 4 pairs         & CPU memory budget \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -382,23 +356,7 @@ catalogues such failures into three categories: \emph{Missing File},
 \subsubsection{Boilerplate Removal}
 
 A multi-pattern regex stripping pass removes parliamentary boilerplate that
-would otherwise inflate term frequencies and bias BM25 scoring:
-
-\begin{lstlisting}[language=Python,
-  caption={Parliamentary boilerplate removal patterns.}]
-boilerplate = [
-  r"GOVERNMENT OF INDIA",
-  r"LOK SABHA",
-  r"MINISTRY OF \w+( \w+)*",
-  r"STARRED QUESTION NO\. \d+",
-  r"UNSTARRED QUESTION NO\. \d+",
-  r"ANSWERED ON \d{2}\.\d{2}\.\d{4}",
-  r"ANSWER",
-  r"\*+",
-  r"A statement is laid on the Table of the House\.",
-  r"STATEMENT REFERRED TO IN REPLY TO PARTS ..."
-]
-\end{lstlisting}
+would otherwise inflate term frequencies and bias BM25 scoring.
 
 \subsubsection{Language Detection and Metadata Tagging}
 
@@ -406,19 +364,6 @@ After cleaning, each document is passed to \texttt{langdetect.detect()},
 which returns an ISO~639-1 language code stored under the \texttt{language}
 key in the per-document metadata JSON:
 
-\begin{lstlisting}[language=Python,
-  caption={Language detection with DetectorFactory seed.}]
-from langdetect import detect, DetectorFactory
-DetectorFactory.seed = 0  # Reproducibility
-
-def detect_text_language(text):
-    if len(text) < 20:
-        return "unknown"
-    try:
-        return detect(text)
-    except:
-        return "unknown"
-\end{lstlisting}
 
 \noindent The \texttt{DetectorFactory.seed = 0} call enforces deterministic
 language detection results across runs.
@@ -450,18 +395,6 @@ Documents already below 400 words pass through unchanged.
 Long documents are split by a positive-lookahead structural regex that
 preserves the trigger header word at the start of each child chunk:
 
-\begin{lstlisting}[language=Python,
-  caption={Structural split pattern used in both QAChunker and DebBillChunker.}]
-split_pattern = (
-  r'\n(?=(?:ANNEXURE|STATEMENT REFERRED TO'
-  r'|APPENDIX|TABLE|CHAPTER|SECTION'
-  r'|RECOMMENDATION|OBSERVATION)\b)'
-)
-chunks = re.split(split_pattern, text,
-                  flags=re.IGNORECASE)
-chunks = [c.strip() for c in chunks
-          if len(c.strip()) > 50]
-\end{lstlisting}
 
 If the regex finds no structural boundary (a continuous wall of text), the
 fallback splits on two or more consecutive newlines (\texttt{r'\textbackslash
@@ -471,22 +404,6 @@ n\{2,\}'}), simulating a paragraph boundary.
 
 A child chunk at index~$> 0$ within a split document receives an explicit
 context header prepended to its text before embedding:
-
-\begin{lstlisting}[language=Python,
-  caption={Context injection for non-first child chunks.}]
-if index > 0:
-    doc_type = doc["metadata"].get("type", "document")
-    parent_title = doc["metadata"].get(
-        "title", "Unknown Subject")
-    parent_context = (
-        f"[Context: This is a continuation/section"
-        f" of the {doc_type} regarding "
-        f"'{parent_title}']\n\n"
-    )
-    final_text = parent_context + chunk_text
-else:
-    final_text = chunk_text
-\end{lstlisting}
 
 This single concatenation restores the document-level discriminative signal
 that a bi-encoder would otherwise lack.
@@ -501,7 +418,7 @@ The corpus is split across two sub-teams producing two JSON files:
 \texttt{CorpusPatcher.py} prepends the appropriate prefix to all document
 IDs, and \texttt{DebBillDupeFixer.py} resolves any remaining ID collisions
 by appending an incrementing \texttt{\_subchunk\{N\}} suffix.
-The resulting IDs are globally unique across the merged 241,000-document
+The resulting IDs are globally unique across the merged $\approx$200,000-document
 corpus, ensuring that both the SQLite primary key constraint and the Qdrant
 UUID5-based point ID generation produce collision-free entries.
 
@@ -539,7 +456,7 @@ Qdrant by default pins vectors and HNSW graph edges in RAM.
 At $d=1024$ with \texttt{float32} precision, the raw vector footprint alone is:
 
 \begin{equation}
-  M_\text{vec} = 241{,}000 \times 1024 \times 4\,\text{B}
+  M_\text{vec} = 200{,}000 \times 1024 \times 4\,\text{B}
   \approx 986\,\text{MB}
   \label{eq:ramvec}
 \end{equation}
@@ -547,23 +464,6 @@ At $d=1024$ with \texttt{float32} precision, the raw vector footprint alone is:
 With HNSW graph overhead, payload dictionaries, and concurrent segment-merge
 RAM spikes, the in-memory footprint was observed to exceed available RAM
 during pilot ingestion, causing kernel OOM kills.
-Four orthogonal mechanisms collectively constitute the \textbf{Low-RAM
-Straitjacket}:
-
-\begin{lstlisting}[language=Python,
-  caption={Qdrant low-RAM collection configuration (DataUploader.py).}]
-client.create_collection(
-  collection_name=COLLECTION_NAME,
-  vectors_config=VectorParams(
-    size=1024,
-    distance=Distance.COSINE,
-    on_disk=True,    # (1) vectors -> SSD mmap
-  ),
-  hnsw_config=HnswConfigDiff(
-    on_disk=True,    # (2) HNSW graph -> SSD mmap
-  ),
-)
-\end{lstlisting}
 
 The two \texttt{on\_disk=True} flags instruct Qdrant to memory-map all
 vector data and HNSW graph edges from the SSD rather than pinning them in
@@ -588,16 +488,7 @@ The primary retrieval encoder is BAAI/bge-m3~\cite{mrag_settings2024},
 a multilingual bi-encoder producing 1024-dimensional vectors trained on
 100+ languages.
 Query encoding is performed via \texttt{SentenceTransformer.encode()},
-which delegates to a CPU ONNX backend when no CUDA device is detected:
-
-\begin{lstlisting}[language=Python,
-  caption={Device detection and CPU thread management.}]
-device = "cuda" if torch.cuda.is_available() else "cpu"
-if device == "cpu":
-    torch.set_num_threads(4)  # Prevent thread thrash
-dense_model = SentenceTransformer(
-    "BAAI/bge-m3", device=device)
-\end{lstlisting}
+which delegates to a CPU ONNX backend when no CUDA device is detected.
 
 The \texttt{torch.set\_num\_threads(4)} call is critical on consumer laptops:
 without this constraint, PyTorch spawns threads equal to the number of logical
@@ -622,7 +513,6 @@ similarity may retrieve thematically related but numerically incorrect passages.
 
 \subsubsection{Score Fusion: Why RRF over Direct Score Averaging}
 
-RQ1 asks how to fuse incommensurable BM25 and cosine scores.
 Two fusion strategies were considered at design time: (a)~\emph{direct linear
 combination} of normalised scores, and (b)~\emph{Reciprocal Rank Fusion}
 (RRF).
@@ -655,31 +545,6 @@ Qdrant implements RRF server-side as a named fusion strategy
 (\texttt{models.Fusion.RRF}), invoked through the \texttt{FusionQuery}
 prefetch mechanism:
 
-\begin{lstlisting}[language=Python,
-  caption={Dual-path RRF hybrid query (SearchGenerateReRank.py).}]
-search_results = q_client.query_points(
-  collection_name=COLLECTION_NAME,
-  prefetch=[
-    models.Prefetch(
-        query=query_dense,
-        using="dense_bge",
-        limit=50         # fetch top-50 from dense
-    ),
-    models.Prefetch(
-        query=models.SparseVector(
-            indices=query_sparse.indices.tolist(),
-            values=query_sparse.values.tolist()
-        ),
-        using="sparse_keyword",
-        limit=50         # fetch top-50 from BM25
-    ),
-  ],
-  query=models.FusionQuery(
-      fusion=models.Fusion.RRF),  # server-side RRF
-  limit=50                        # RRF-merged list
-).points
-\end{lstlisting}
-
 The \texttt{limit=50} on the outer query returns the top-50 documents from
 the RRF-merged ranking, providing the Stage-2 reranker with its full
 candidate pool.
@@ -693,24 +558,7 @@ Version~1 (\texttt{SearchGenerateReRank.py}) retrieves document text by
 executing 50 individual \texttt{SELECT} queries---one per Qdrant hit.
 This N+1 pattern introduces substantial I/O overhead.
 Version~2 (\texttt{SearchGenerateReRank-v2.py}) replaces this with a single
-bulk \texttt{IN} query:
-
-\begin{lstlisting}[language=Python,
-  caption={Bulk SQLite fetch (v2 optimisation).}]
-placeholders = ','.join('?' * len(doc_ids))
-query = (
-  f"SELECT chunk_id, doc_type, title, raw_text "
-  f"FROM documents "
-  f"WHERE chunk_id IN ({placeholders})"
-)
-cursor.execute(query, doc_ids)
-sql_results = cursor.fetchall()
-# O(1) lookup dictionary:
-doc_map = {row[0]: {"doc_type": row[1],
-                    "title": row[2],
-                    "text": row[3]}
-           for row in sql_results}
-\end{lstlisting}
+bulk \texttt{IN} query.
 
 The subsequent per-document lookup in \texttt{doc\_map} is $O(1)$, reducing
 50 sequential disk reads to a single query against the SQLite B-tree index.
@@ -726,27 +574,6 @@ more robustly at the cost of higher inference latency.
 In both versions, the 50 candidate documents retrieved from Stage~4 are
 formed into (query, document\_text) pairs and scored by the cross-encoder:
 
-\begin{lstlisting}[language=Python,
-  caption={Cross-encoder batched reranking.}]
-reranker = CrossEncoder(
-    "BAAI/bge-reranker-v2-m3",  # v2: multilingual
-    device=device
-)
-pairs = [[user_question, doc["text"]]
-         for doc in candidate_docs]
-rerank_scores = reranker.predict(
-    pairs,
-    batch_size=4,          # CPU memory budget
-    show_progress_bar=False
-)
-reranked_docs = sorted(
-    enumerate(candidate_docs),
-    key=lambda x: rerank_scores[x[0]],
-    reverse=True
-)
-best_docs = [d for _, d in reranked_docs[:final_top_k]]
-\end{lstlisting}
-
 \noindent The \texttt{batch\_size=4} parameter limits the number of
 (query, document) pairs processed simultaneously in a single forward pass,
 preventing host RAM spikes from concurrent BERT activations on CPU.
@@ -759,7 +586,7 @@ interactions that are impossible in the independent bi-encoder formulation.
 The $k$-highest scoring documents are sliced from the sorted list and
 passed to the generation stage.
 
-\textbf{Why v1 addresses RQ2:} The English-optimised \texttt{bge-reranker-base}
+The English-optimised \texttt{bge-reranker-base}
 operates within a fixed 512-token window.
 Since Devanagari text consumes significantly more tokens per word than English
 under subword tokenisers trained predominantly on Latin-script data, a Hindi
@@ -768,8 +595,6 @@ cross-encoder to truncate and score an incomplete passage.
 Selecting BAAI/bge-m3 as the bi-encoder (multilingual, 100+ languages) for
 Stage~1 means that semantically relevant Hindi chunks \emph{will} appear in
 the top-50 candidate list.
-Using \texttt{bge-reranker-base} at Stage~2 introduces potential scoring
-degradation on those Hindi chunks.
 Version~2 resolves this by replacing the reranker with
 \texttt{bge-reranker-v2-m3}, which was trained on multilingual data and
 handles Devanagari tokenisation more accurately, at the cost of increased
@@ -780,24 +605,7 @@ CPU inference time.
 
 The top-$k$ reranked documents are serialised into a structured context block
 with source attribution headers and submitted to
-\texttt{gemini-2.5-flash} via the Google GenAI SDK:
-
-\begin{lstlisting}[language=Python,
-  caption={Source-attributed document formatting for LLM context.}]
-"formatted": (
-    f"[SOURCE: {doc_data['doc_type']}"
-    f" - {doc_data['title']}]\n"
-    f"{doc_data['text']}\n"
-)
-\end{lstlisting}
-
-\begin{lstlisting}[language=Python,
-  caption={Gemini generation call.}]
-response = client.models.generate_content(
-    model='gemini-2.5-flash',
-    contents=prompt
-)
-\end{lstlisting}
+\texttt{gemini flash} via the Google GenAI SDK
 
 \subsubsection{Source-Constrained Prompt Protocol}
 
@@ -805,27 +613,23 @@ The system prompt enforces three non-negotiable rules:
 
 \begin{lstlisting}[language=Python,
   caption={Generation prompt with hallucination-prevention rules.}]
-prompt = """
-You are an expert parliamentary assistant for
-the Government of India.
-Answer using ONLY the provided context from
-Lok Sabha debates and bills.
-
-Rules:
-1. If the answer is not contained in the
-   context, explicitly say: "I cannot answer
-   this based on the provided parliamentary
-   records."
-2. Do not use outside knowledge.
-3. Cite the specific Bill or Debate you are
-   pulling the facts from in your answer.
+prompt = 
+f"""You are a precision-focused legal and parliamentary assistant for the Government of India.
+Your objective is to synthesize accurate, highly structured answers to the user's query using ONLY the provided Lok Sabha records.
+CORE DIRECTIVES:
+ 1. ABSOLUTE GROUNDING: You must rely exclusively on the CONTEXT provided below. Do not use external knowledge, internet training data, or infer legal facts not explicitly stated.
+ 2. THE "PIVOT & INFORM" RULE: If the CONTEXT does not contain the exact information required to fully answer the query, you MUST begin your response by explicitly stating: "I cannot directly answer this specific question based on the provided parliamentary records." Immediately following this, you must pivot to provide a structured summary of the most closely related legal facts, debates, or definitions that *are* present in the retrieved CONTEXT.
+ 3. CITATION MANDATE: Every factual claim, statistic, or penalty in your answer (including the related information provided under Rule 2) MUST be immediately followed by an inline citation to its source document (e.g., [SOURCE: BILL - The Personal Data Protection Bill, 2019]). 
+ 4. CHRONOLOGY & CONFLICTS: If the CONTEXT contains multiple documents showing how a law or debate evolved over time (e.g., a 2019 draft vs. a 2023 amendment), clearly separate them and explain the evolution. 
+ 5. STRUCTURAL CLARITY: Output your response using strict Markdown. Use bullet points for lists, and use bold text for specific penalties, dates, and Section/Clause numbers. Maintain a formal, objective, and non-partisan tone.
 
 CONTEXT:
 {context_string}
 
-USER QUESTION:
+USER QUESTION: 
 {user_question}
-"""
+
+FINAL ANSWER:"""
 \end{lstlisting}
 
 \noindent Rule~1 instructs the LLM to \emph{refuse} rather than fabricate
@@ -847,15 +651,26 @@ summarised in Table~\ref{tab:evolution}.
   \caption{Architectural Iterations of the Lok Sabha RAG Pipeline}
   \label{tab:evolution}
   \centering
-  \begin{tabular}{p{1.0cm}p{2.8cm}p{3.5cm}}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}p{0.7cm}p{3.0cm}p{3.3cm}@{}}
     \toprule
-    \textbf{Version} & \textbf{Key Configuration} & \textbf{Primary Change} \\
+    \textbf{Ver.} & \textbf{Key Configuration} & \textbf{Primary Change} \\
     \midrule
-    v0 & Dense-only; \newline \texttt{SearchTest.py} & Baseline ANN; no fusion, no reranker \\
-    v1 & RRF~+~\texttt{bge-reranker-base};\newline N+1 SQLite & Two-stage hybrid; English CE \\
-    v2 & RRF~+~\texttt{bge-reranker-v2-m3};\newline Bulk SQL;\newline Thread cap & Multilingual CE; N+1 fix; CPU optimisation \\
+    v0 & Dense-only retrieval;
+         \texttt{SearchTest.py}
+       & Baseline ANN; no fusion, no reranker \\
+    \addlinespace
+    v1 & RRF + \texttt{bge-reranker-base};
+         N+1 SQLite fetch
+       & Two-stage hybrid pipeline; English cross-encoder \\
+    \addlinespace
+    v2 & RRF + \texttt{bge-reranker-v2-m3};
+         bulk SQL; thread cap
+       & Multilingual CE; N+1 fix; CPU optimisation \\
     \bottomrule
   \end{tabular}
+  \renewcommand{\arraystretch}{1.0}
 \end{table}
 
 \subsection{Impact of Prefetch Depth on Recall}
@@ -873,7 +688,7 @@ engineering decision to recover split legal context.
 \subsection{Cross-Encoder and Multilingual Trade-off}
 
 The upgrade from \texttt{bge-reranker-base} (v1) to
-\texttt{bge-reranker-v2-m3} (v2) addresses RQ2 by directly deploying
+\texttt{bge-reranker-v2-m3} (v2) directly deploys
 a multilingual cross-encoder that is not constrained by English subword
 tokenisation for Devanagari input.
 The \texttt{batch\_size=4} setting in the v2 reranker constrains peak
@@ -982,24 +797,25 @@ for Devanagari-script scans.
 
 \subsection{Conclusion}
 
-This paper presented a hardware-optimised, two-stage hybrid RAG system
-engineered to address four simultaneous failure modes in the Lok Sabha
-parliamentary corpus: LLM hallucination, sparse--dense score
-incommensurability, multilingual cross-encoder degradation, and consumer-
-hardware OOM crashes.
+This paper presented a two-stage hybrid RAG system engineered under consumer-hardware
+constraints to address three compounding failure modes in the Lok Sabha parliamentary
+corpus: LLM hallucination of statutory facts, loss of numerical precision from
+sparse keyword models, and multilingual cross-encoder degradation on Devanagari-script documents.
 
-The core engineering contributions are: (i)~a bilingual structural regex
-chunker with a 400-word ceiling and parent-context injection, eliminating the
-blind-split loss of document context; (ii)~a langdetect-based language tagging
-pipeline that annotates corpus documents at ingestion time for downstream
-multilingual analysis; (iii)~a mathematically motivated selection of RRF over
-direct score combination that neutralises BM25 outlier-score distortion without
-corpus-wide pre-calibration; (iv)~a four-parameter Low-RAM Straitjacket Qdrant
-configuration enabling full 241,000-document ingestion within a 16\,GB RAM
-envelope; (v)~a v2 upgrade replacing the English-only cross-encoder with a
-multilingual variant and fixing the N+1 SQLite retrieval bottleneck; and
-(vi)~a source-citation-only prompt protocol that enforces explicit refusal over
-hallucinated fabrication.
+The core engineering contributions are:
+(i)~an end-to-end data pipeline for constructing a structured, machine-readable
+parliamentary corpus from scratch, covering scraping, PDF extraction, boilerplate
+removal, failure cataloguing, and structural chunking across the 16th--18th
+Lok Sabha archives;
+(ii)~a structural regex chunker with a 400-word ceiling and parent-context
+propagation that eliminates the blind-split loss of document context for both
+Q\&A and Debate/Bill document types;
+(iii)~a multilingual ingestion and retrieval strategy combining BAAI/bge-m3
+(100+ languages) with the BAAI/bge-reranker-v2-m3 cross-encoder, mitigating
+tokenisation-induced truncation on Devanagari-script passages; and
+(iv)~a hardware configuration recipe enabling stable ingestion and querying of
+a $\approx$200,000-document Qdrant vector database within a 16\,GB RAM envelope
+via on-disk vector and HNSW storage.
 
 The system establishes a replicable blueprint for deploying trustworthy,
 precision-focused legal AI interfaces over institutionally important corpora
