@@ -1,0 +1,8 @@
+streamlit
+python-dotenv
+torch
+sentence-transformers
+fastembed
+qdrant-client
+google-genai
+openai
