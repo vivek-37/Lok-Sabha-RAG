@@ -12,7 +12,7 @@ from qdrant_client import models
 # ==========================================
 # CONFIGURATION
 # ==========================================
-GEMINI_API_KEY = "AIzaSyCIqT7DpVsh_Fk7YWUUTr82xvctQEaU8UQ" # Replace or use st.secrets
+GEMINI_API_KEY = "" # Replace or use st.secrets
 QDRANT_URL = "http://localhost:6333"
 COLLECTION_NAME = "loksabha_rag_hybrid_bm25_bge" 
 SQLITE_DB = "loksabha_text_store.db"

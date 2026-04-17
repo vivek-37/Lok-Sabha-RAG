@@ -12,7 +12,7 @@ from qdrant_client import models
 # CONFIGURATION
 # ==========================================
 # PASTE YOUR API KEY HERE:
-GEMINI_API_KEY = "AIzaSyCIqT7DpVsh_Fk7YWUUTr82xvctQEaU8UQ" 
+GEMINI_API_KEY = "" 
 
 QDRANT_URL = "http://localhost:6333"
 COLLECTION_NAME = "loksabha_rag_hybrid_bm25_bge" 
