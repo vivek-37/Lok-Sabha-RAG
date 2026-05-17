@@ -18,6 +18,9 @@ A retrieval-augmented generation system designed to answer questions about India
 
 ---
 
+## Video Demo
+Here is a [simple and short (<1 minute) video demo](https://youtu.be/T0QMbayYqQs)  
+
 ## Architecture
 
 ### System Components
