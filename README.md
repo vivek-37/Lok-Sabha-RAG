@@ -145,46 +145,9 @@ export GEMINI_API_KEY="your-google-api-key-here"
 ---
 
 ## Data Ingestion Pipeline
-To build this system, the data needs to be extracted from the [sanasad.in/ls](https://sansad.in/ls)
+#### To build this system, the data needs to be extracted from the [sanasad.in/ls](https://sansad.in/ls)
 
-The scripts to download, preprocess, chunk and embed the documents are attached in the repository 
-
-### Step 1: Prepare Corpus
-
-If you have raw parliamentary data in JSON format:
-
-```bash
-python CorpusPatcher.py  # Clean and normalize data
-```
-
-### Step 2: Generate Vector Embeddings
-
-Use the provided Jupyter notebook to generate embeddings:
-
-```bash
-jupyter notebook vector-embedding-generation.ipynb
-```
-
-This will:
-- Load 200,000+ parliamentary chunks
-- Generate dense embeddings (BGE-M3)
-- Generate sparse embeddings (BM25)
-- Export to Qdrant-compatible format
-
-### Step 3: Populate Vector Database
-
-```bash
-python DBPopulator.py    # Populates Qdrant with embeddings
-python DataUploader.py   # Uploads chunk text to SQLite
-```
-
-### Step 4: Remove Duplicates (Optional)
-
-```bash
-python DebBillDupeFixer.py  # Removes duplicate entries from database
-```
-
----
+#### The scripts to download, preprocess, chunk and embed the documents are attached in the repository. The application requires Qdrant as the main vector storage which stores embedding vectors and documnet ids, the actual document contents are present on a SQLite DB along with other file metadata. 
 
 ## Running the Application
 
@@ -220,7 +183,7 @@ print(response.text)
 ## Core Modules
 
 ### `FormattedLSRAG.py` (Main Application)
-The production-ready Streamlit application with dual-view formatting:
+The Streamlit application with dual-view formatting:
 - Hybrid retrieval + reranking
 - JSON-formatted dual-view responses
 - Interactive chat history
@@ -229,28 +192,6 @@ The production-ready Streamlit application with dual-view formatting:
 **Usage:**
 ```bash
 streamlit run FormattedLSRAG.py
-```
-
-### `FrontendRAGPipelinev3.py` (Streamlit UI)
-Lightweight Streamlit interface without JSON formatting:
-- Simplified chat UI
-- Context transparency
-- Fast response generation
-
-**Usage:**
-```bash
-streamlit run FrontendRAGPipelinev3.py
-```
-
-### `SearchGenerateReRank-v3.py` (Advanced Pipeline)
-Production pipeline with full reranking stack:
-- Configurable retrieval parameters
-- Multi-stage filtering
-- Evaluation metrics
-
-**Usage:**
-```bash
-python SearchGenerateReRank-v3.py --query "Your question here"
 ```
 
 ### Data Processing Scripts
@@ -280,11 +221,7 @@ The system excels at complex legal queries:
 
 ## How It Works
 
-### 1. **Query Processing**
-   - Language detection (English, Hindi, Kannada, Tamil)
-   - Optional pre-translation to English for consistency
-
-### 2. **Stage 1: Hybrid Retrieval**
+### **Stage 1: Hybrid Retrieval**
    ```
    Dense Search: BGE-M3 Embedding
    + Semantic understanding of query intent
@@ -297,12 +234,12 @@ The system excels at complex legal queries:
    = Top-50 candidates
    ```
 
-### 3. **Stage 2: Reranking**
+### **Stage 2: Reranking**
    - Cross-Encoder (BGE-Reranker-v2-m3) scores all 50 candidates
    - Outputs top-10 highest-scoring chunks
    - Significantly reduces noise and hallucination
 
-### 4. **Generation**
+### **Generation**
    - Context + grounding rules passed to Gemini
    - LLM enforces:
      - "I cannot determine..." for unknown queries
@@ -310,7 +247,7 @@ The system excels at complex legal queries:
      - Markdown formatting with bold/bullet points
      - Chronological ordering for multi-year queries
 
-### 5. **Formatting**
+### **Formatting**
    - Raw LLM output split into JSON:
      - `simple`: 8th-grade reading level (no jargon)
      - `detailed`: Structured legal markdown (full nuance)
