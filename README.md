@@ -54,8 +54,8 @@ A retrieval-augmented generation system designed to answer questions about India
             ┌────────────────┴────────────────┐
             │  FORMATTING AGENT               │
             │                                 │
-            │  ├─ Simple View (JSON)          │
-            │  └─ Detailed View (JSON)        │
+            │  ├─ Simple View                 │
+            │  └─ Detailed View               │
             └────────────────┬────────────────┘
                              │
 ┌────────────────────────────┴────────────────────────────────────┐
