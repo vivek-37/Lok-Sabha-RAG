@@ -194,16 +194,6 @@ The Streamlit application with dual-view formatting:
 streamlit run FormattedLSRAG.py
 ```
 
-### Data Processing Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `CorpusPatcher.py` | Cleans raw parliamentary JSON data |
-| `DBPopulator.py` | Loads embeddings into Qdrant |
-| `DataUploader.py` | Stores chunk text in SQLite |
-| `DebBillChunker.py` | Chunks bills into 512-token segments |
-| `DebBillDupeFixer.py` | Removes duplicate document entries |
-
 ---
 
 ## Example Queries
