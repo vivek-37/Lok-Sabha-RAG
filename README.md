@@ -32,47 +32,42 @@ The Lok Sabha RAG system addresses critical gaps in applying standard RAG archit
 └────────────────────────────┬────────────────────────────────────┘
                              │
             ┌────────────────┴────────────────┐
-            │  PRE-PROCESSING                 │
-            │  (NLU + Language Detection)     │
-            └────────────────┬────────────────┘
-                             │
-            ┌────────────────┴────────────────┐
             │  STAGE 1: HYBRID RETRIEVAL      │
             │                                 │
-            │  ├─ Dense Embedding (BGE-M3)   │
-            │  └─ Sparse Embedding (BM25)    │
-            │     └─ RRF Fusion              │
+            │  ├─ Dense Embedding (BGE-M3)    │
+            │  └─ Sparse Embedding (BM25)     │
+            │     └─ RRF Fusion               │
             └────────────────┬────────────────┘
                              │
             ┌────────────────┴────────────────┐
             │  STAGE 2: RERANKING             │
             │                                 │
-            │  Cross-Encoder Scoring         │
-            │  (Top-10 Selection)            │
+            │  Cross-Encoder Scoring          │ 
+            │  (Top-10 Selection)             │
             └────────────────┬────────────────┘
                              │
             ┌────────────────┴────────────────┐
             │  GENERATION                     │
             │                                 │
-            │  Gemini LLM with:              │
-            │  ├─ Grounding Rules            │
-            │  ├─ Citation Mandate           │
-            │  └─ Markdown Formatting        │
+            │  Gemini LLM with:               │
+            │  ├─ Grounding Rules             │
+            │  ├─ Citation Mandate            │
+            │  └─ Markdown Formatting         │
             └────────────────┬────────────────┘
                              │
             ┌────────────────┴────────────────┐
             │  FORMATTING AGENT               │
             │                                 │
-            │  ├─ Simple View (JSON)         │
-            │  └─ Detailed View (JSON)       │
+            │  ├─ Simple View (JSON)          │
+            │  └─ Detailed View (JSON)        │
             └────────────────┬────────────────┘
                              │
 ┌────────────────────────────┴────────────────────────────────────┐
-│                        FINAL RESPONSE                            │
-│                                                                  │
+│                        FINAL RESPONSE                           │
+│                                                                 │
 │  ├─ Simple: 8th-grade accessible summary                        │
-│  └─ Detailed: Legal-grade structured markdown with citations   │
-└──────────────────────────────────────────────────────────────────┘
+│  └─ Detailed: Legal-grade structured markdown with citations    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Technology Stack
@@ -401,6 +396,8 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 **Vivek R A**  
 GitHub: [@vivek-37](https://github.com/vivek-37)
+
+
 **Vrishant Bhalla**
 GitHub: [@vrishant](https://github.com/vrishant)
 
