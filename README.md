@@ -2,15 +2,11 @@
 
 > **A hallucination-resistant, hardware-optimized RAG system for Indian parliamentary data**
 
-A sophisticated retrieval-augmented generation system designed to answer questions about Indian parliamentary debates, bills, and legislative records with near-zero hallucination rates. This system combines dense semantic search, sparse keyword matching and cross-encoder reranking to deliver precise, citation-grounded answers from over 200,000 parliamentary document chunks.
+A retrieval-augmented generation system designed to answer questions about Indian parliamentary debates, bills and legislative records with low hallucination rates. This system combines dense semantic search, sparse keyword matching and cross-encoder reranking to deliver precise, citation-grounded answers from over 200,000 parliamentary document chunks.
 
 ---
 
-## Overview
-
-The Lok Sabha RAG system addresses critical gaps in applying standard RAG architectures to Indian legislative data. It combines cutting-edge NLP techniques with practical hardware optimizations to create a production-ready legal QA system.
-
-### Key Features
+## Key Features
 
 - **Two-Stage Hybrid Retrieval**: Combines BAAI/bge-m3 (dense semantic search) with BM25 (sparse keyword matching) using Reciprocal Rank Fusion
 - **Cross-Encoder Reranking**: BGE-Reranker-v2-m3 filters top candidates to reduce context noise and hallucinations
