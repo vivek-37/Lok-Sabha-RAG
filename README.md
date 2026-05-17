@@ -395,10 +395,14 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## Authors
 
 **Vivek R A**  
+
+
 GitHub: [@vivek-37](https://github.com/vivek-37)
 
 
 **Vrishant Bhalla**
+
+
 GitHub: [@vrishant](https://github.com/vrishant)
 
 
