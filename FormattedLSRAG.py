@@ -148,8 +148,8 @@ def formatter_agent(raw_llm_answer):
 # ==========================================
 st.set_page_config(page_title="Lok Sabha AI", page_icon="🏛️", layout="centered")
 
-st.title("🏛️ Lok Sabha AI Assistant")
-st.markdown("Ask questions about Indian parliamentary debates, bills, and legislative records.")
+st.title("🏛️ Lok Sabha RAG Agent")
+st.markdown("Ask questions about Indian parliamentary debates, bills and Q&As.")
 
 # Initialize chat history
 if "messages" not in st.session_state:
