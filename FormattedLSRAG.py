@@ -13,7 +13,7 @@ from qdrant_client import models
 # ==========================================
 # CONFIGURATION
 # ==========================================
-GEMINI_API_KEY = "AIzaSyCIqT7DpVsh_Fk7YWUUTr82xvctQEaU8UQ" # Replace with your key
+GEMINI_API_KEY = "AIzaSyAU3iR6r9ci-fD4W9HPjDLyF-2cIWMulGo" # Replace with your key
 QDRANT_URL = "http://localhost:6333"
 COLLECTION_NAME = "loksabha_rag_hybrid_bm25_bge" 
 SQLITE_DB = "loksabha_text_store.db"
@@ -44,7 +44,6 @@ client, q_client, dense_model, sparse_model, reranker = load_systems()
 # ==========================================
 def retrieve_context(user_question, final_top_k=10, fetch_limit=50):
     """Stage 1: Hybrid Retrieval. Stage 2: Cross-Encoder Reranking."""
-
     client, q_client, dense_model, sparse_model, reranker = load_systems()
 
     conn = sqlite3.connect(SQLITE_DB)
@@ -111,10 +110,7 @@ def retrieve_context(user_question, final_top_k=10, fetch_limit=50):
 # 2. FORMATTER AGENT
 # ==========================================
 def formatter_agent(raw_llm_answer):
-    """
-    Takes the raw, dense legal output and structures it into JSON
-    containing a 'simple' view and a 'detailed' view.
-    """
+    """Takes dense legal output and structures it into JSON with 'simple' and 'detailed' keys."""
     formatter_prompt = f"""
     You are a Formatting Agent. Your job is to take the following dense parliamentary answer 
     and convert it into two distinct representations.
@@ -130,17 +126,15 @@ def formatter_agent(raw_llm_answer):
     {raw_llm_answer}
     """
     
-    # Force the model to return strict JSON using the config
     response = client.models.generate_content(
-        model='gemini-3-flash-preview',
+        model='gemini-2.5-flash',
         contents=formatter_prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
-            temperature=0.1 # Keep it focused, no creative hallucination
+            temperature=0.1
         )
     )
     
-    # Parse the string into a Python dictionary
     return json.loads(response.text)
 
 # ==========================================
@@ -162,7 +156,6 @@ for message in st.session_state.messages:
             st.markdown(message["content"])
     elif message["role"] == "assistant":
         with st.chat_message("assistant"):
-            # Create the UI Toggle mechanism natively
             tab_simple, tab_detailed = st.tabs(["📝 Simple View", "🏛️ Detailed Record"])
             with tab_simple:
                 st.markdown(message["simple"])
@@ -217,7 +210,7 @@ if prompt := st.chat_input("E.g., Which Bills have more than 2 amendments?"):
             """
             try:
                 raw_response = client.models.generate_content(
-                    model='gemini-3-flash-preview',
+                    model='gemini-2.5-flash',
                     contents=base_prompt
                 ).text
                 
@@ -229,6 +222,8 @@ if prompt := st.chat_input("E.g., Which Bills have more than 2 amendments?"):
             except Exception as e:
                 status.update(label="Error generating response.", state="error")
                 st.error(f"API Error: {e}")
+                # OPTIMIZATION: Stop execution so it doesn't look for 'formatted_data' downstream
+                st.stop() 
             
         # Render the interactive tabs for the current response
         tab_simple, tab_detailed = st.tabs(["📝 Simple View", "🏛️ Detailed Record"])
