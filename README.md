@@ -145,7 +145,8 @@ export GEMINI_API_KEY="your-google-api-key-here"
 ---
 
 ## Data Ingestion Pipeline
-To build this system, the data needs to be extracted from the sanasad.in/ls
+To build this system, the data needs to be extracted from the [sanasad.in/ls](https://sansad.in/ls)
+
 The scripts to download, preprocess, chunk and embed the documents are attached in the repository 
 
 ### Step 1: Prepare Corpus
