@@ -1,28 +1,28 @@
-# 🏛️ Lok Sabha RAG: A Two-Stage Hybrid Retrieval-Augmented Generation System
+# Lok Sabha RAG: A Two-Stage Hybrid Retrieval-Augmented Generation System
 
 > **A hallucination-resistant, hardware-optimized RAG system for Indian parliamentary data**
 
-A sophisticated retrieval-augmented generation system designed to answer questions about Indian parliamentary debates, bills, and legislative records with near-zero hallucination rates. This system combines dense semantic search, sparse keyword matching, and cross-encoder reranking to deliver precise, citation-grounded answers from over 241,000 parliamentary document chunks.
+A sophisticated retrieval-augmented generation system designed to answer questions about Indian parliamentary debates, bills, and legislative records with near-zero hallucination rates. This system combines dense semantic search, sparse keyword matching and cross-encoder reranking to deliver precise, citation-grounded answers from over 200,000 parliamentary document chunks.
 
 ---
 
-## 🎯 Overview
+## Overview
 
 The Lok Sabha RAG system addresses critical gaps in applying standard RAG architectures to Indian legislative data. It combines cutting-edge NLP techniques with practical hardware optimizations to create a production-ready legal QA system.
 
 ### Key Features
 
-- **🔍 Two-Stage Hybrid Retrieval**: Combines BAAI/bge-m3 (dense semantic search) with BM25 (sparse keyword matching) using Reciprocal Rank Fusion
-- **⚖️ Cross-Encoder Reranking**: BGE-Reranker-v2-m3 filters top candidates to reduce context noise and hallucinations
-- **🌍 Multilingual Support**: Handles Hindi, Kannada, Tamil, and English queries with proper Devanagari/Dravidian script tokenization
-- **💾 Optimized Vector Database**: Qdrant-based architecture for efficient handling of 241,000+ document chunks on consumer hardware
-- **📝 Dual-View Formatting**: Automatically generates both simple (8th-grade reading level) and detailed (legal-grade) responses
-- **🧠 Gemini Integration**: Uses Google Gemini 2.5 Flash for fast, accurate generation with strict grounding prompts
-- **🎯 Citation Mandate**: Every factual claim is traceable to source documents
+- **Two-Stage Hybrid Retrieval**: Combines BAAI/bge-m3 (dense semantic search) with BM25 (sparse keyword matching) using Reciprocal Rank Fusion
+- **Cross-Encoder Reranking**: BGE-Reranker-v2-m3 filters top candidates to reduce context noise and hallucinations
+- **Multilingual Support**: Handles Hindi, Kannada, Tamil, and English queries with proper Devanagari/Dravidian script tokenization
+- **Optimized Vector Database**: Qdrant-based architecture for efficient handling of 241,000+ document chunks on consumer hardware
+- **Dual-View Formatting**: Automatically generates both simple (8th-grade reading level) and detailed (legal-grade) responses
+- **Gemini Integration**: Uses Google Gemini 2.5 Flash for fast, accurate generation with strict grounding prompts
+- **Citation Mandate**: Every factual claim is traceable to source documents
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### System Components
 
@@ -90,7 +90,7 @@ The Lok Sabha RAG system addresses critical gaps in applying standard RAG archit
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Python 3.10+
 - 8GB RAM (minimum; 16GB recommended)
@@ -100,7 +100,7 @@ The Lok Sabha RAG system addresses critical gaps in applying standard RAG archit
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### 1. Clone the Repository
 
@@ -150,9 +150,11 @@ export GEMINI_API_KEY="your-google-api-key-here"
 
 ---
 
-## 📥 Data Ingestion Pipeline
+## Data Ingestion Pipeline
+To build this system, the data needs to be extracted from the sanasad.in/ls
+The scripts to download, preprocess, chunk and embed the documents are attached in the repository 
 
-### Step 1: Prepare Corpus (Optional - Skip if Using Pre-Built DB)
+### Step 1: Prepare Corpus
 
 If you have raw parliamentary data in JSON format:
 
@@ -169,7 +171,7 @@ jupyter notebook vector-embedding-generation.ipynb
 ```
 
 This will:
-- Load 241,000+ parliamentary chunks
+- Load 200,000+ parliamentary chunks
 - Generate dense embeddings (BGE-M3)
 - Generate sparse embeddings (BM25)
 - Export to Qdrant-compatible format
@@ -189,7 +191,7 @@ python DebBillDupeFixer.py  # Removes duplicate entries from database
 
 ---
 
-## 🎮 Running the Application
+## Running the Application
 
 ### Launch the Interactive UI
 
@@ -197,7 +199,6 @@ python DebBillDupeFixer.py  # Removes duplicate entries from database
 streamlit run FormattedLSRAG.py
 ```
 
-The app will open at `http://localhost:8501`
 
 ### Alternative: Run RAG Pipeline Programmatically
 
@@ -221,7 +222,7 @@ print(response.text)
 
 ---
 
-## 📊 Core Modules
+## Core Modules
 
 ### `FormattedLSRAG.py` (Main Application)
 The production-ready Streamlit application with dual-view formatting:
@@ -267,17 +268,9 @@ python SearchGenerateReRank-v3.py --query "Your question here"
 | `DebBillChunker.py` | Chunks bills into 512-token segments |
 | `DebBillDupeFixer.py` | Removes duplicate document entries |
 
-### Testing & Evaluation
-
-| Script | Purpose |
-|--------|---------|
-| `SearchTest.py` | Basic retrieval testing |
-| `SearchTestHybrid.py` | Hybrid search validation |
-| `SearchGenerate.py` | End-to-end pipeline testing |
-
 ---
 
-## 🧪 Example Queries
+## Example Queries
 
 The system excels at complex legal queries:
 
@@ -290,7 +283,7 @@ The system excels at complex legal queries:
 
 ---
 
-## 🎯 How It Works
+## How It Works
 
 ### 1. **Query Processing**
    - Language detection (English, Hindi, Kannada, Tamil)
@@ -329,23 +322,13 @@ The system excels at complex legal queries:
 
 ---
 
-## 📈 Performance & Evaluation
-
-### Benchmark Results
-
-| Metric | Score |
-|--------|-------|
-| NDCG@10 (Hybrid vs. Dense-only) | +23% improvement |
-| Hallucination Rate (with reranking) | <2% |
-| Latency (retrieval + generation) | ~4-6 seconds |
-| Coverage (41 major bills) | 100% indexed |
-| Memory Footprint | ~2.8GB (excluding model weights) |
+## Performance & Evaluation
 
 See `rag_evaluation_report_claude_sonnet_4_6_extended.md` for detailed evaluation metrics.
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
 Edit the top section of any pipeline script to customize:
 
@@ -369,7 +352,7 @@ LLM_MODEL = "gemini-2.5-flash"
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### "Connection refused" at `localhost:6333`
 ```bash
@@ -395,27 +378,8 @@ device = "cpu"  # Instead of torch.cuda.is_available()
 - Use smaller `fetch_limit` and `final_top_k` values
 - Consider using Gemini Pro batch processing API
 
----
 
-## 📚 Key Research Insights
-
-This system addresses three critical challenges in legal RAG:
-
-1. **Multilingual Reranking Blindspot**
-   - Standard cross-encoders fail on Devanagari/Dravidian scripts
-   - Solution: BGE-Reranker-v2-m3 with proper tokenization
-
-2. **Precision vs. Hallucination Trade-off**
-   - "Lost in the Middle" syndrome when LLM receives too much context
-   - Solution: RRF fusion + cross-encoder reduces context by 80%
-
-3. **Hardware & Ingestion Limits**
-   - Processing 241,000+ chunks causes OOM crashes
-   - Solution: Streaming ingestion + Qdrant's efficient indexing
-
----
-
-## 📖 References
+## References
 
 - [A Retrieval-augmented Generation Framework](https://www.researchgate.net/publication/393590507)
 - [Graph-Based Retrieval-Augmented Generation](https://ieeexplore.ieee.org/document/10871140)
@@ -427,41 +391,23 @@ This system addresses three critical challenges in legal RAG:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-## 👤 Author
+## Authors
 
-**Vivek Kumar**  
+**Vivek R A**  
 GitHub: [@vivek-37](https://github.com/vivek-37)
+**Vrishant Bhalla**
+GitHub: [@vrishant](https://github.com/vrishant)
+
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📞 Support & Issues
-
-For bugs, feature requests, or questions:
-
-- **GitHub Issues**: [Report a bug](https://github.com/vivek-37/Lok-Sabha-RAG/issues)
-- **Discussions**: [Ask questions](https://github.com/vivek-37/Lok-Sabha-RAG/discussions)
-
----
-
-## ⭐ Acknowledgments
+## Acknowledgments
 
 - **Google Gemini API** for powerful LLM inference
 - **Qdrant** for vector database excellence
